@@ -1,7 +1,13 @@
 let display = document.getElementById('display');
 let expression = '';
+let showConfirmation = false;
 
 function appendNumber(num) {
+    // Close confirmation dialog if open
+    if (showConfirmation) {
+        closeConfirmation();
+    }
+
     // Prevent multiple decimal points in a number
     if (num === '.') {
         const lastOperator = Math.max(
@@ -19,6 +25,11 @@ function appendNumber(num) {
 }
 
 function appendOperator(op) {
+    // Close confirmation dialog if open
+    if (showConfirmation) {
+        closeConfirmation();
+    }
+
     // Prevent operator at the beginning (except minus for negative numbers)
     if (expression === '' && op !== '-') return;
     
@@ -35,18 +46,48 @@ function appendOperator(op) {
 function clearDisplay() {
     expression = '';
     updateDisplay();
+    closeConfirmation();
 }
 
 function deleteLast() {
     expression = expression.slice(0, -1);
     updateDisplay();
+    closeConfirmation();
 }
 
 function updateDisplay() {
     display.value = expression || '0';
 }
 
+function showConfirmationDialog() {
+    showConfirmation = true;
+    const confirmationDiv = document.getElementById('confirmationDialog');
+    confirmationDiv.style.display = 'flex';
+}
+
+function closeConfirmation() {
+    showConfirmation = false;
+    const confirmationDiv = document.getElementById('confirmationDialog');
+    confirmationDiv.style.display = 'none';
+}
+
+function confirmCalculate() {
+    performCalculation();
+    closeConfirmation();
+}
+
+function declineCalculate() {
+    closeConfirmation();
+}
+
 function calculate() {
+    // Show confirmation dialog instead of calculating immediately
+    if (expression.trim() !== '') {
+        showConfirmationDialog();
+    }
+}
+
+function performCalculation() {
     try {
         // Replace % with /100 for proper calculation
         let calcExpression = expression.replace(/%/g, '/100');
@@ -75,11 +116,16 @@ document.addEventListener('keydown', function(event) {
         appendOperator(key);
     } else if (key === 'Enter' || key === '=') {
         event.preventDefault();
-        calculate();
+        if (showConfirmation) {
+            confirmCalculate();
+        } else {
+            calculate();
+        }
     } else if (key === 'Backspace') {
         event.preventDefault();
         deleteLast();
     } else if (key === 'Escape') {
+        closeConfirmation();
         clearDisplay();
     }
 });
